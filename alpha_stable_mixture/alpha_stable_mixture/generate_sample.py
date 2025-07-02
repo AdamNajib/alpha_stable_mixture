@@ -3,6 +3,32 @@ import pandas as pd
 from scipy.stats import levy_stable
 import matplotlib.pyplot as plt
 
+def generate_mixture_data(K=2, N=1000, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
+
+    weights = np.random.dirichlet(np.ones(K), 1)[0]
+
+    params = []
+    data = []
+    for i in range(K):
+        alpha = np.random.uniform(1.3, 1.9)
+        beta = np.random.uniform(-1, 1)
+        gamma = np.random.uniform(0.5, 2.0)
+        delta = np.random.uniform(-2, 2)
+        n_i = int(weights[i] * N)
+        sample = levy_stable.rvs(alpha, beta, loc=delta, scale=gamma, size=n_i)
+        data.append(sample)
+        params.append({
+            'alpha': alpha,
+            'beta': beta,
+            'gamma': gamma,
+            'delta': delta,
+            'pi': weights[i]
+        })
+
+    return np.concatenate(data), params
+
 # === Generate Samples from Mixture of Alpha-Stable Distributions ===
 def generate_alpha_stable_mixture(weights, alphas, betas, gammas, deltas, size=1000, random_state=None):
     """

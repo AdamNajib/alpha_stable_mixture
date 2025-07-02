@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "alpha_stable_mixture"
 version = "0.1.0"
-description = "EM and ECF-based estimation for alpha-stable mixture models"
+description = "Tools for modeling and estimating alpha-stable mixture distributions"
 authors = [
     {name = "Adam Najib"}
 ]

@@ -372,3 +372,24 @@ def plot_effective_reproduction_number(GT, S, inc, dates, est_r0_ml, RT, output_
         print(f"Plot saved as {output_file}")
     else:
         print("Not enough data points for cubic spline interpolation.")
+
+def plot_fit_vs_true(true_params, est_params, data, bins=100):
+    x = np.linspace(min(data), max(data), 1000)
+
+    def mixture_pdf(x, params):
+        y = np.zeros_like(x)
+        for p in params:
+            y += p['pi'] * levy_stable.pdf(x, p['alpha'], p['beta'], loc=p['delta'], scale=p['gamma'])
+        return y
+
+    plt.figure(figsize=(10, 5))
+    plt.hist(data, bins=bins, density=True, alpha=0.4, label='Data')
+
+    plt.plot(x, mixture_pdf(x, true_params), 'g--', lw=2, label='True PDF')
+    plt.plot(x, mixture_pdf(x, est_params), 'r-', lw=2, label='Estimated PDF')
+
+    plt.title("True vs Estimated Mixture Density")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()

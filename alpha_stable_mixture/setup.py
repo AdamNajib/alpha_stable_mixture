@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="alpha_stable_mixture",
     version="0.1.0",
-    description="EM and ECF-based estimation for alpha-stable mixture models",
+    description="Tools for alpha-stable mixture model estimation and simulation",
     author="Adam Najib",
     packages=find_packages(),
     install_requires=[

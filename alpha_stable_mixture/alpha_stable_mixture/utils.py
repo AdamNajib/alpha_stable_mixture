@@ -7,7 +7,7 @@ from rpy2.rinterface import RRuntimeError
 from numba import njit, prange
 from .r_interface import stats
 from statsmodels.nonparametric.bandwidths import bw_silverman
-
+from scipy.stats import wasserstein_distance
 
 L_alpha, L_beta, L_delta, L_omega = [], [], [], []
 M_w = []
@@ -665,3 +665,19 @@ def false_position_update(a, b_n, f_a, f_b, objective_func):
 
 def ensure_positive_scale(scale, min_value=0.05):  # Adjust from 1e-6 to something realistic
     return float(scale) if scale > min_value else min_value
+
+def wasserstein_distance_mixture(params1, params2, size=5000):
+    def sample(params):
+        weights = np.array([p['pi'] for p in params])
+        weights /= weights.sum()
+        samples = []
+        for _ in range(size):
+            i = np.random.choice(len(params), p=weights)
+            p = params[i]
+            s = levy_stable.rvs(p['alpha'], p['beta'], loc=p['delta'], scale=p['gamma'])
+            samples.append(s)
+        return np.array(samples)
+
+    s1 = sample(params1)
+    s2 = sample(params2)
+    return wasserstein_distance(s1, s2)
