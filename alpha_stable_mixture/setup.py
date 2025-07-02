@@ -1,0 +1,26 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="alpha_stable_mixture",
+    version="0.1.0",
+    description="EM and ECF-based estimation for alpha-stable mixture models",
+    author="Adam Najib",
+    packages=find_packages(),
+    install_requires=[
+        "numpy",
+        "scipy",
+        "pandas",
+        "matplotlib",
+        "scikit-learn",
+        "streamlit",
+        "statsmodels",
+        "rpy2"
+    ],
+    include_package_data=True,
+    zip_safe=False,
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+    ],
+    python_requires='>=3.8',
+)

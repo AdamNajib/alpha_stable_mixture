@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alpha_stable_mixture"
+version = "0.1.0"
+description = "EM and ECF-based estimation for alpha-stable mixture models"
+authors = [
+    {name = "Adam Najib"}
+]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "scikit-learn",
+    "streamlit",
+    "statsmodels",
+    "rpy2"
+]
+
+[tool.setuptools.packages.find]
+where = ["alpha_stable_mixture"]
