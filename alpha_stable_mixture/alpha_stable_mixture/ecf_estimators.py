@@ -319,25 +319,3 @@ def ecf_components(phi_vals):
     arg_vals = np.angle(phi_vals)
     return y_vals, arg_vals
 
-def CDF(x, u):
-    _, _, gamma0, delta0 = stable_fit_init(x)
-    x = (x - delta0) / gamma0
-
-    y1, y3 = ecf_fn(x, u)
-    z1 = np.log(-np.log(y1))
-    v1 = np.log(np.abs(u))
-    a1 = np.polyfit(v1, z1, 1)
-    alpha1 = np.clip(a1[0], 0.1, 2)
-    gamma1 = np.exp(a1[1] / alpha1)
-
-    v3 = -gamma1**alpha1 * eta0(u, alpha1, gamma1)
-    a3 = np.linalg.lstsq(np.column_stack([v3, u]), y3, rcond=None)[0]
-    beta1 = np.clip(a3[0], -1, 1)
-    delta1 = a3[1]
-
-    return {
-        "alpha": alpha1,
-        "beta": beta1,
-        "gamma": gamma1 * gamma0,
-        "delta": delta1 * gamma0 + delta0
-    }

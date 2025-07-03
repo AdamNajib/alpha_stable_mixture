@@ -5,7 +5,8 @@ import seaborn as sns
 from .r_interface import libstable4u, stats
 import pandas as pd
 from rpy2.robjects import FloatVector
-from .utils import r_stable_pdf, mixture_stable_pdf, mock_gibbs_sampling
+from .utils import r_stable_pdf, mixture_stable_pdf
+from .gibbs import mock_gibbs_sampling
 from scipy.stats import levy_stable
 from scipy.interpolate import make_interp_spline
 
@@ -112,24 +113,6 @@ def plot_results(M2_w1, M2_alpha1, M2_beta1, M2_delta1, M2_omega1, M2_w2, M2_alp
     plt.grid(True)
     plt.tight_layout()
     plt.savefig("bayesian_stable_mixture_final.png")  # Save the plot as an image fileplot as an image file
-    #plt.show()
-
-def plot_method_comparison(scores):
-    # Convert scores dictionary to a DataFrame
-    df = pd.DataFrame(scores).T.reset_index().rename(columns={'index': 'Method'})
-    df = df.melt(id_vars='Method', var_name='Metric', value_name='Value')  # Reshape for seaborn
-
-    # Create subplots for RMSE and LogLikelihood
-    fig, ax1 = plt.subplots(1, 2, figsize=(12, 4))
-    sns.barplot(data=df[df['Metric'] == 'RMSE'], x='Method', y='Value', ax=ax1[0], palette='viridis')
-    ax1[0].set_title('RMSE per Method')
-    ax1[0].tick_params(axis='x', rotation=45)
-
-    sns.barplot(data=df[df['Metric'] == 'LogLikelihood'], x='Method', y='Value', ax=ax1[1], palette='magma')
-    ax1[1].set_title('LogLikelihood per Method')
-    ax1[1].tick_params(axis='x', rotation=45)
-    plt.tight_layout()
-    plt.savefig("method_comparison.png")  # Save the plot as an image file
     #plt.show()
 
 # ----------------- Plot Comparison EM vs Non-Optimal -----------------
@@ -262,63 +245,6 @@ def plot_real_mixture_fit(X, result):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
-
-# Compare Methods with and without Gibbs Sampling
-def compare_methods_with_gibbs(data, em_params, ecf_kernel_params, ecf_empirical_params):
-    """
-    Compare the results of methods with and without Gibbs sampling.
-    """
-    # Perform Gibbs sampling
-    best_params, all_samples = mock_gibbs_sampling(data, n_samples=500)
-    gibbs_mean = np.mean([params for _, params in all_samples], axis=0) if all_samples else np.zeros(9)
-
-    # Extract parameters from Gibbs sampling
-    gibbs_params = ([gibbs_mean[1], gibbs_mean[2], gibbs_mean[3], gibbs_mean[4]],
-                    [gibbs_mean[5], gibbs_mean[6], gibbs_mean[7], gibbs_mean[8]],
-                    gibbs_mean[0])
-
-    # Define plotting x-axis
-    x_vals = np.linspace(min(data), max(data), 1000)
-
-    methods = {
-        "EM Estimated": em_params,
-        "ECF Kernel": ecf_kernel_params,
-        "ECF Empirical": ecf_empirical_params,
-        "Gibbs Sampling": gibbs_params
-    }
-
-    for name, (param1, param2, weight) in methods.items():
-        if isinstance(param1, dict):
-            # Safely get parameters from dict, with loc defaulted to 0
-            loc1 = param1.get('loc', 0)
-            loc2 = param2.get('loc', 0)
-            scale1 = param1.get('scale', 1)
-            scale2 = param2.get('scale', 1)
-
-            param1 = (param1['alpha'], param1['beta'], scale1, loc1)
-            param2 = (param2['alpha'], param2['beta'], scale2, loc2)
-            
-            pdf1 = r_stable_pdf(x_vals, *param1)
-            pdf2 = r_stable_pdf(x_vals, *param2)
-        else:
-            # Assume tuple (alpha, beta, scale, loc)
-            pdf1 = r_stable_pdf(x_vals, *param1)
-            pdf2 = r_stable_pdf(x_vals, *param2)
-
-        mixture_pdf = weight * pdf1 + (1 - weight) * pdf2
-
-        # Plot
-        plt.figure(figsize=(10, 6))
-        plt.hist(data, bins=40, density=True, alpha=0.5, label="Data", color="gray")
-        plt.plot(x_vals, mixture_pdf, label=f"{name} Fit", lw=2)
-        plt.title(f"{name} vs Data")
-        plt.xlabel("x")
-        plt.ylabel("Density")
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        plt.savefig(f"mixture_alpha_stable_{name.replace(' ', '_').lower()}.png")  # Save the plot
-        #plt.show()  
 
 def plot_effective_reproduction_number(GT, S, inc, dates, est_r0_ml, RT, output_file="RN_avec_dates_EM-ML.pdf"):
     """

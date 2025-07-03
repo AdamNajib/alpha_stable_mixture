@@ -9,6 +9,7 @@ from .r_interface import stats
 from statsmodels.nonparametric.bandwidths import bw_silverman
 from scipy.stats import wasserstein_distance
 
+
 L_alpha, L_beta, L_delta, L_omega = [], [], [], []
 M_w = []
 
@@ -18,6 +19,8 @@ def unpack_params(p):
     """
     return p['alpha'], p['beta'], p['gamma'], p['delta']
 
+def ensure_positive_scale(scale, min_value=1e-6):
+    return scale if scale > 0 else min_value
 
 def estimate_bandwidth_custom(x):
     """
@@ -34,14 +37,6 @@ def estimate_bandwidth_custom(x):
     C = min(np.std(x), (np.percentile(x, 75) - np.percentile(x, 25)) / 1.349)
     b_n = C * n ** (-2 / 5)
     b_n_prime = C * n ** (-3 / 5)
-
-    def N_gaussien(z):
-        """Standard Gaussian density function."""
-        return (1 / np.sqrt(2 * np.pi)) * np.exp(-0.5 * z ** 2)
-
-    def N_gaussien_2(z):
-        """Second derivative of Gaussian density function."""
-        return (1 / np.sqrt(2 * np.pi)) * (z ** 2 * np.exp(-z ** 2 / 2) - np.exp(-z ** 2 / 2))
 
     I1 = 1 / (n * (n - 1) * b_n) * sum(
         np.sum(N_gaussien((x[i] - np.delete(x, i)) / b_n)) for i in range(n)
@@ -64,18 +59,6 @@ def estimate_bandwidth_custom(x):
 
     h_n = (valeur1 / valeur2) ** (1 / 5) * abs(K1) ** (1 / 5) * n ** (-1 / 5)
     return h_n
-
-def estimate_bandwidth_r(x):
-    """
-    Computes bandwidth using R's bw.nrd0 and bw.SJ methods.
-    """
-    if len(x) == 0 or not np.all(np.isfinite(x)):
-        raise ValueError("Input array must be valid and finite.")
-
-    x_r = FloatVector(list(x))
-    bw_nrd0 = stats.bw_nrd0(x_r)[0]
-    bw_sj = stats.bw_SJ(x_r)[0]
-    return bw_nrd0, bw_sj
 
 def estimate_bandwidth_r(x):
     """
@@ -246,6 +229,10 @@ def stable_fit_init(x):
 def N_gaussien(z):
     """ Standard Gaussian kernel function. """
     return (1 / np.sqrt(2 * np.pi)) * np.exp(-0.5 * z ** 2)
+
+def N_gaussien_2(z):
+    """Second derivative of Gaussian density function."""
+    return (1 / np.sqrt(2 * np.pi)) * (z ** 2 * np.exp(-z ** 2 / 2) - np.exp(-z ** 2 / 2))
 
 # Uniform Kernel Functiondef N_uniform(z):
 def N_uniform(z):
@@ -662,9 +649,6 @@ def false_position_update(a, b_n, f_a, f_b, objective_func):
         return a
 
     return c if f_c * f_a < 0 else c
-
-def ensure_positive_scale(scale, min_value=0.05):  # Adjust from 1e-6 to something realistic
-    return float(scale) if scale > min_value else min_value
 
 def wasserstein_distance_mixture(params1, params2, size=5000):
     def sample(params):
