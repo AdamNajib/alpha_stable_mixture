@@ -105,30 +105,45 @@ def export_analysis_report(data, stable_params, qcv, skew_kurt, normality, verdi
         df_normality.to_excel(writer, sheet_name="Normality_Tests")
 
 # Final full analysis function
-def analyse_stable_complet(x, qcv_threshold=1.8, export_name="stable_output"):
-    norm_results = test_normality(x)
+def analyse_stable_distribution(x, filename="interval_analysis", qcv_threshold=1.8):
+    print("✅ Analyse de la série...")
+
+    normal = test_normality(x)
     sk_kurt = skew_kurtosis(x)
-    qcv_val = qcv_stat(x)
-    est_params = estimate_stable_r(x)
-    verdict = ""
+    qcv = qcv_stat(x)
+    stable_params = estimate_stable_r(x)
 
-    if all(t.pvalue < 0.05 for t in norm_results.values() if hasattr(t, 'pvalue')) and qcv_val > qcv_threshold:
-        verdict = "La série suit probablement une loi α-stable (non normale, queue lourde)"
+    print(f"Skewness: {sk_kurt['skewness']:.3f}")
+    print(f"Kurtosis: {sk_kurt['kurtosis']:.3f}")
+    print(f"QCV: {qcv:.3f}")
+
+    print("\n🧪 Tests de normalité (Shapiro & Anderson uniquement) :")
+
+    # — Analyse du test de Shapiro
+    stat_shapiro, p_shapiro = normal["Shapiro"]
+    shapiro_pass = p_shapiro >= 0.05
+    flag_shapiro = "✅ passe" if shapiro_pass else "⛔ rejette"
+    print(f"• Shapiro      → stat={stat_shapiro:.4f}, p={p_shapiro:.4f} → {flag_shapiro}")
+
+    # — Analyse du test de Anderson
+    stat_anderson = normal["Anderson"].statistic
+    crit_anderson = normal["Anderson"].critical_values[2]  # seuil à 5%
+    anderson_pass = stat_anderson < crit_anderson
+    flag_anderson = "✅ passe" if anderson_pass else "⛔ rejette"
+    print(f"• Anderson     → stat={stat_anderson:.4f}, seuil_5%={crit_anderson:.4f} → {flag_anderson}")
+
+    # Verdict basé sur : au moins 1 test rejette la normalité ET QCV > seuil
+    normality_rejected = (not shapiro_pass) or (not anderson_pass)
+    if normality_rejected and qcv > qcv_threshold:
+        verdict = "✅ Distribution probablement α-stable (non normale, queue lourde)"
     else:
-        verdict = "La série ne montre pas un comportement α-stable clair"
+        verdict = "⛔ Distribution probablement pas α-stable"
 
-    if est_params:
-        plot_vs_normal_stable(x, est_params)
+    print("\n→", verdict)
 
-    export_analysis_report(x, est_params, qcv_val, sk_kurt, norm_results, verdict, filename=export_name)
-    print("✅ Rapport généré:", export_name + ".json / .xlsx")
-    print("✅ Verdict :", verdict)
+    plot_vs_normal_stable(x, stable_params)
+    export_analysis_report(x, stable_params, qcv, sk_kurt, normal, verdict, filename=filename)
+    return verdict
 
-    return {
-        "normality": norm_results,
-        "skew_kurt": sk_kurt,
-        "qcv": qcv_val,
-        "params": est_params,
-        "verdict": verdict
-    }
+
 
